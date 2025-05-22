@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>CAPILLAS LATINOAMERICANA</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com;
+             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+             connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://script.google.com;">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Banner offline -->
+  <div id="offlineBanner" class="hidden bg-red-600 text-white text-center p-2">
+    SIN CONEXIÓN. FUNCIONALIDAD BLOQUEADA.
+  </div>
+  <!-- Banner permiso denegado -->
+  <div id="permissionDeniedBanner" class="hidden bg-yellow-600 text-white text-center p-2">
+    PERMISO DENEGADO. CONTACTE AL ADMINISTRADOR.
+  </div>
+
+  <!-- Sección de login de usuario -->
+  <section id="loginSection" class="p-4 max-w-md mx-auto mt-10 bg-white rounded shadow">
+    <!-- Sección de login de usuario -->
+    <h2 class="text-xl font-semibold mb-4">Ingrese Usuario (NOMBRE APELLIDO)</h2>
+    <input list="usersList" id="userInput" class="w-full border rounded p-2 mb-4"
+           placeholder="EJ. ALEJANDRO SOTELO" autocomplete="off" />
+    <datalist id="usersList"></datalist>
+    <div class="flex justify-end">
+      <button id="loginBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Ingresar</button>
+    </div>
+    <p id="loginMsg" class="mt-2 text-sm text-red-600"></p>
+  </section>
+
+  <!-- Contenido principal -->
+  <main id="mainContent" class="hidden p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Header con logo corporativo -->
+    <header class="md:col-span-2 bg-white shadow p-4 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold">CAPILLAS LATINOAMERICANA</h1>
+      <img src="logo.png" alt="Logo" class="h-12" /> <!-- Logo corporativo -->
+    </header>
+
+    <!-- Formulario de asignación -->
+    <section id="formSection" class="bg-white p-4 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Asignación de Capillas</h2>
+      <form id="assignmentForm" class="space-y-4">
+        <!-- FechaVelacion -->
+        <div>
+          <label for="dateInput">FechaVelacion</label>
+          <input type="text" id="dateInput" name="FechaVelacion" readonly
+                 class="w-full border rounded p-2 bg-white cursor-pointer" />
+        </div>
+        <!-- Capilla -->
+        <div>
+          <label for="chapelSelect">Capilla</label>
+          <select id="chapelSelect" name="Capilla" class="w-full border rounded p-2">
+            <option value="">-- Seleccione Capilla --</option>
+          </select>
+        </div>
+        <!-- HorarioVelacion -->
+        <div>
+          <label for="timeSelect">HorarioVelacion</label>
+          <select id="timeSelect" name="HorarioVelacion" class="w-full	border rounded p-2">
+            <option value="">-- Seleccione Horario --</option>
+          </select>
+        </div>
+        <!-- NombreFinado -->
+        <div>
+          <label for="deceasedName">NombreFinado</label>
+          <input type="text" id="deceasedName" name="NombreFinado"
+                 class="w-full border rounded p-2"
+                 placeholder="Nombre(s) Apellido P Apellido M" />
+        </div>
+        <!-- FolioServicio -->
+        <div>
+          <label for="serviceFolio">FolioServicio</label>
+          <div class="flex">
+            <span class="px-3 bg-gray-200 border border-r-0">S-0</span>
+            <input type="text" id="serviceFolio" name="FolioServicio"
+                   class="w-full border rounded-r p-2" placeholder="0001" pattern="\\d{4}" />
+          </div>
+        </div>
+        <!-- Comentarios -->
+        <div>
+          <label for="comments">Comentarios</label>
+          <textarea id="comments" name="Comentarios"
+                    class="w-full border rounded p-2"
+                    placeholder="Notas adicionales..."></textarea>
+        </div>
+        <!-- Campos ocultos para Sheets -->
+        <input type="hidden" name="Usuario" id="UsuarioField" />
+        <input type="hidden" name="Timestamp" id="TimestampField" />
+        <!-- Botones -->
+        <div class="flex space-x-2">
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+            Asignar Capilla
+          </button>
+          <button type="button" id="viewSummaryBtn"
+                  class="bg-gray-600 text-white px-4 py-2 rounded">
+            Ver Resumen
+          </button>
+          <button type="button" id="clearAllBtn"
+                  class="bg-red-600 text-white px-4 py-2 rounded ml-auto"
+                  style="display:none;">
+            Limpiar Base
+          </button>
+        </div>
+        <div id="message" class="mt-2 text-sm"></div>
+      </form>
+    </section>
+
+    <!-- Tabla de Asignaciones Existentes -->
+    <section class="bg-white p-4 rounded shadow overflow-x-auto">
+      <h2 class="text-xl font-semibold mb-4">Asignaciones Existentes</h2>
+      <table id="assignmentsTable" class="min-w-full table-auto">
+        <thead><tr class="bg-gray-200">
+          <th class="p-2">FechaVelacion</th>
+          <th class="p-2">Capilla</th>
+          <th class="p-2">HorarioVelacion</th>
+          <th class="p-2">FolioServicio</th>
+          <th class="p-2">NombreFinado</th>
+          <th class="p-2">Acciones</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Resumen de Ocupación -->
+    <section class="bg-white p-4 rounded shadow overflow-x-auto">
+      <h2 class="text-xl font-semibold mb-4">Resumen de Ocupación (Hoy + 2 días)</h2>
+      <div id="summaryTable"></div>
+    </section>
+  </main>
+
+  <footer class="bg-white p-4 text-center text-sm">
+    &copy; 2025 Latinoamericana Recinto Funeral.
+  </footer>
+
+  <script type="module">
+  // --------- Inicializar Firebase ---------
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+  import {
+    getFirestore, collection, getDocs,
+    addDoc, deleteDoc, query, orderBy, doc
+  } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  if (!firebaseConfig.projectId || firebaseConfig.projectId === 'YOUR_PROJECT_ID') {
+    alert('⚠️ Configure firebaseConfig.projectId en el script.');
+    throw new Error('Missing Firebase projectId');
+  }
+  let app, db;
+  try {
+    app = initializeApp(firebaseConfig);
+    db  = getFirestore(app);
+  } catch (err) {
+    console.error('Error inicializando Firebase', err);
+    alert('Error al inicializar Firebase. Ver consola.');
+    return;
+  }
+
+  // --------- Inicializar Apps Script ---------
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziPJU-naWOxgNB9Jd6HQa0gle125_yoJHaMhcGmg54pOFQj4YkTeMmk9IM5DyJAscS/exec';
+  async function appendToSheet(data) {
+    try {
+      const res  = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      if (json.status !== 'success') throw new Error(json.message);
+    } catch (err) {
+      console.error('Error sincronizando con Sheets', err);
+      showMsg('Error sincronizando con Sheets','text-red-600');
+    }
+  }
+
+  // --------- DOM y utilidades ---------
+  const offlineBanner           = document.getElementById('offlineBanner');
+  const permissionDeniedBanner = document.getElementById('permissionDeniedBanner');
+  const loginSection           = document.getElementById('loginSection');
+  const mainContent            = document.getElementById('mainContent');
+  const userInput              = document.getElementById('userInput');
+  const usersList              = document.getElementById('usersList');
+  const loginBtn               = document.getElementById('loginBtn');
+  const loginMsg               = document.getElementById('loginMsg');
+  const form                   = document.getElementById('assignmentForm');
+  const messageDiv             = document.getElementById('message');
+  const viewSummaryBtn         = document.getElementById('viewSummaryBtn');
+  const clearAllBtn            = document.getElementById('clearAllBtn');
+  const chapSelect             = document.getElementById('chapelSelect');
+  const timeSelect             = document.getElementById('timeSelect');
+
+  let currentUser = localStorage.getItem('currentUser') || '';
+  let isAdmin     = false;
+  let assignments = [];
+
+  const chapels = [
+    'Capilla Del CONSUELO','Capilla MEMORIAL','Capilla SAN JOSE',
+    'Capilla RESURRECCION','Capilla SANTO CRISTO','DOMICILIO 1','DOMICILIO 2'
+  ];
+  const times = [
+    '08:00 am','09:00 am','10:00 am','11:00 am','12:00 pm',
+    '01:00 pm','02:00 pm','03:00 pm','04:00 pm','05:00 pm',
+    '06:00 pm','06:30 pm','07:00 pm','07:30 pm','08:00 pm',
+    '08:30 pm','09:00 pm','10:00 pm','11:00 pm','12:00 am'
+  ];
+
+  // Poblamos selects y Flatpickr
+  chapels.forEach(c => chapSelect.innerHTML += `<option value="${c}">${c}</option>`);
+  times.forEach(t   => timeSelect.innerHTML += `<option value="${t}">${t}</option>`);
+  flatpickr('#dateInput',{ dateFormat:'Y-m-d', defaultDate:new Date(), allowInput:false, onChange:render });
+
+  function updateOnlineStatus() {
+    const online = navigator.onLine;
+    offlineBanner.classList.toggle('hidden', online);
+    permissionDeniedBanner.classList.add('hidden');
+    document.querySelectorAll('input,select,button').forEach(el=>el.disabled = !online);
+  }
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+
+  function handlePermissionDenied() {
+    permissionDeniedBanner.classList.remove('hidden');
+    document.querySelectorAll('input,select,button').forEach(el=>el.disabled = true);
+  }
+
+  function pad4(n){ return String(n).padStart(4,'0'); }
+  function showMsg(txt,cls='text-red-600'){
+    messageDiv.textContent = txt;
+    messageDiv.className      = cls;
+    setTimeout(()=>messageDiv.textContent = '', 3000);
+  }
+
+  // --------- Login y usuarios ---------
+  async function loadUsers(){
+    try {
+      const snap = await getDocs(query(collection(db,'users'), orderBy('name')));
+      return snap.docs.map(d => d.data().name);
+    } catch (err) {
+      console.error('loadUsers', err);
+      if (err.code==='permission-denied') handlePermissionDenied();
+      return [];
+    }
+  }
+  async function registerUser(name){
+    try { await addDoc(collection(db,'users'),{ name }); }
+    catch(err){ console.error('registerUser', err); if(err.code==='permission-denied') handlePermissionDenied(); }
+  }
+  async function initLogin(){
+    const users = await loadUsers();
+    usersList.innerHTML = users.map(u=>`<option value="${u}">`).join('');
+    if (currentUser) { userInput.value = currentUser; await doLogin(); }
+  }
+  userInput.addEventListener('input', e => userInput.value = e.target.value.toUpperCase());
+  loginBtn.addEventListener('click', doLogin);
+
+  async function doLogin(){
+    const name = userInput.value.trim();
+    if (!/^[A-ZÑ ]+$/.test(name)) { loginMsg.textContent='Solo mayúsculas'; return; }
+    const users = await loadUsers();
+    if (!users.includes(name)) {
+      if (confirm(`Usuario ${name} no existe. ¿Registrar?`)) await registerUser(name);
+      else return;
+    }
+    currentUser = name;
+    localStorage.setItem('currentUser', name);
+    isAdmin = ['ALEJANDRO SOTELO','AARON HIDALGO'].includes(name);
+    clearAllBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    loginSection.classList.add('hidden');
+    mainContent.classList.remove('hidden');
+    render();
+    updateOnlineStatus();
+  }
+
+  // --------- Asignaciones ---------
+  async function loadAssignments(){
+    try {
+      const snap = await getDocs(query(collection(db,'assignments'), orderBy('date')));
+      assignments = snap.docs.map(d=>({
